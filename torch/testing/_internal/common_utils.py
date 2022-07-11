@@ -710,13 +710,18 @@ def run_tests(argv=UNITTEST_ARGS):
                                     '-rfEsX', f'--junit-xml-reruns={pytest_report_path}.xml'])
             del os.environ["USING_PYTEST"]
             sanitize_pytest_xml(f'{pytest_report_path}.xml')
-            if exit_code == 5:
-                # exitcode of 5 means no tests were found, which happens for some test configs
-                exit(0)
-            exit(exit_code)
-        else:
             os.makedirs(test_report_path, exist_ok=True)
             verbose = '--verbose' in argv or '-v' in argv
+            unittest_success = unittest.main(argv=argv, testRunner=xmlrunner.XMLTestRunner(
+                output=test_report_path,
+                verbosity=2 if verbose else 1,
+                resultclass=XMLTestResultVerbose), exit=False).result.wasSuccessful()
+            if unittest_success and (exit_code == 0 or exit_code == 5):
+                exit(0)
+            else:
+                exit(1)
+        else:
+            exit(0)
             if verbose:
                 print(f'Test results will be stored in {test_report_path}')
             unittest.main(argv=argv, testRunner=xmlrunner.XMLTestRunner(
